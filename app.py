@@ -16,13 +16,20 @@ from torchvision import transforms
 from PIL import Image
 from ultralytics import YOLO
 import json
+from jinja2 import Environment, FileSystemLoader
 
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', template_folder='templates')
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+
+# Keep Flask's own Jinja environment so template globals like url_for and get_flashed_messages remain available
+app.jinja_env.auto_reload = True
+app.jinja_env.cache = {}
 
 secret_key = os.getenv("SECRET_KEY")
 if not secret_key:
@@ -248,17 +255,33 @@ def generate_recommendations(disease_result, growth_result):
         recs.extend(grow_map[gmain])
     # Recommend only top 5 relevant
     return recs[:5]
-
 def analyze_image(image):
-    disease = infer_disease(image)
+
+    # First detect cotton growth stage
     growth = infer_growth_stage(image)
+
+    # Stop analysis if no cotton growth stage is detected
+    if growth["main_class"] is None:
+        return {
+            "error": "No cotton plant detected",
+            "disease": None,
+            "growth": growth,
+            "recommendations": [
+                "Please upload a valid cotton crop image."
+            ]
+        }
+
+    # Continue disease analysis only for cotton crops
+    disease = infer_disease(image)
+
+    # Generate recommendations
     recs = generate_recommendations(disease, growth)
+
     return {
         "disease": disease,
         "growth": growth,
         "recommendations": recs,
     }
-
 # UTILITY: For image bounding box rendering in the frontend, also supply dimensions
 def encode_image_for_display(image):
     import base64
@@ -336,6 +359,13 @@ def build_comparison_result(old_results, new_results):
         "recommendation": recommendation,
         "summary": summary,
     }
+
+@app.after_request
+def add_no_cache_headers(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 @app.route("/")
 def index():
@@ -515,6 +545,13 @@ def datetimeformat_filter(value):
     if value == "now":
         return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     return value
+@app.route('/tutorials')
+def tutorials():
+    return render_template('tutorials.html')
+
+@app.route('/stories')
+def stories():
+    return render_template("stories.html")
 
 if __name__ == '__main__':
     logger.info("=" * 60)
