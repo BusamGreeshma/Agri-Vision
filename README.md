@@ -2,26 +2,55 @@
 
 Agri-Vision is an AI-powered system that analyzes cotton crop images to determine growth stages and health conditions.  
 It helps farmers and researchers make informed decisions about crop management and harvest timing.
+<div align="center">
+
+## 🌱 AI Crop Analysis Initialization
+
+<img src="https://img.shields.io/badge/AI-Powered-blue?style=for-the-badge&logo=openai&logoColor=white"/>
+<img src="https://img.shields.io/badge/Crop-Analysis-22c55e?style=for-the-badge"/>
+<img src="https://img.shields.io/badge/Status-Active-0ea5e9?style=for-the-badge"/>
+
+</div>
+
+
+> 🚀 This module prepares the complete AI-powered crop analysis workflow by handling image preprocessing, initializing prediction models, and validating uploaded crop images before analysis.
+
+<br>
+
+<table align="center">
+<tr>
+<td width="50%">
+
+### ⚙️ Core Responsibilities
+- 📸 Image preprocessing
+- 🧠 AI model initialization
+- ✅ Crop image validation
+- 🔍 Prediction workflow handling
+- ⚡ Optimized processing pipeline
+
+</td>
+
+<td width="50%">
+
+### 🌟 Future Enhancements
+- 🌾 Multi-crop disease detection
+- 📡 Real-time prediction rendering
+- ☁️ Cloud-based AI integration
+- 📱 Mobile performance optimization
+- 🤖 Advanced deep learning support
+
+</td>
+</tr>
+</table>
 
 ---
-/*
-|--------------------------------------------------------------------------
-| AI Crop Analysis Initialization
-|--------------------------------------------------------------------------
-| This module is responsible for preparing the AI-powered crop
-| analysis workflow. It manages image preprocessing, initializes
-| prediction models, and validates uploaded crop images before
-| sending them for analysis.
-|
-| Future Enhancements:
-| - Multi-crop disease detection
-| - Real-time prediction rendering
-| - Cloud-based AI integration
-| - Performance optimization for mobile devices
-|--------------------------------------------------------------------------
-*/
 
-## 📌 Overview
+<div align="center">
+
+
+</div>
+
+##  📌 Overview
 
 Agri-Vision uses deep learning and computer vision techniques to:
 
@@ -40,7 +69,7 @@ Agri-Vision uses deep learning and computer vision techniques to:
 - [Dataset Information](#-dataset-information)
 - [Model Information](#-model-information)
 - [Project Structure](#-project-structure)
-- [Setup & Execution](#-project-setup--execution)
+- [Setup & Execution](#-setup--execution)
 - [API Reference](#️-api-reference)
 - [Future Enhancements](#-future-enhancements)
 - [Contributing](#-contributing)
@@ -184,34 +213,48 @@ Agri-Vision/
 
 ---
 
-# 🚀 Local Setup & Execution
+# 🚀 Setup & Execution
 
-Follow the steps below to run the project locally.
+There are two ways to run this project: using Docker (Recommended) or setting it up locally with Python.
 
-## 1️⃣ Clone the Repository
+## 🐳 Option A: Run with Docker (Recommended)
+Using Docker is the easiest way to run Agri-Vision as it avoids system dependency issues and automatically sets up the environment.
+
+1. Ensure you have [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed.
+2. Clone the repository and navigate into it:
+   ```bash
+   git clone <repository-url>
+   cd <project-folder>
+   ```
+3. Build and start the container:
+   ```bash
+   docker-compose up --build
+   
+```
+4. Access the web interface at `http://localhost:5000`.
+
+---
+
+## 🐍 Option B: Local Python Setup
+
+If you prefer to run the project natively using Python (requires Python 3.8+):
+
+### 1️⃣ Clone the Repository
 
 ```bash
 git clone <repository-url>
 cd <project-folder>
 ```
 
----
-
-## 2️⃣ Create a `.env` File
+### 2️⃣ Create a `.env` File
 
 Create a `.env` file in the root directory of the project and add your secret key.
-
-### Example
 
 ```env
 SECRET_KEY=your_secret_key_here
 ```
 
-Replace `your_secret_key_here` with your actual secret key.
-
----
-
-## 3️⃣ Install Python Dependencies
+### 3️⃣ Install Python Dependencies
 
 Install all the required Python packages using:
 
@@ -219,21 +262,17 @@ Install all the required Python packages using:
 pip install -r requirements.txt
 ```
 
----
+### 4️⃣ Run the Project
 
-## 4️⃣ Run the Project
-
-Start the application using:
+Start the application explicitly by running:
 
 ```bash
 python app.py
 ```
 
----
+### ✅ Setup Complete
 
-## ✅ Setup Complete
-
-The project should now be running successfully on your local machine.
+The project should now be running successfully on your local machine at `http://localhost:5000`.
 
 ---
 
@@ -245,7 +284,7 @@ The test suite runs programmatically in-memory, requiring no external files or s
 
 ### 1️⃣ Run Unit Tests & Coverage (Simultaneously)
 
-Thanks to the pre-configured [pytest.ini](file:///d:/GITHUB%20LOCAL/Agri-Vision/pytest.ini), you don't need to pass long command line arguments. Running a single command will execute all 28 tests, generate verbose progress, check code coverage, and produce an HTML report automatically:
+Thanks to the pre-configured `pytest.ini`, you don't need to pass long command line arguments. Running a single command will execute all 28 tests, generate verbose progress, check code coverage, and produce an HTML report automatically:
 
 ```bash
 python -m pytest
@@ -259,7 +298,7 @@ tests/test_app.py::test_infer_disease_fallback PASSED                    [  7%]
 tests/test_app.py::test_post_api_analyze_exception PASSED                [100%]
 
 =============================== tests coverage ================================
-Name     Stmts   Miss  Cover   Missing
+Name      Stmts   Miss  Cover   Missing
 --------------------------------------
 app.py     201     22    89%   81-83, 88-90, 159, 406-420
 --------------------------------------
@@ -269,7 +308,7 @@ Coverage HTML written to dir htmlcov
 ============================= 28 passed in 1.06s ==============================
 ```
 
-### 2️⃣ View Interactive HTML Coverage Report
+### 2️⃣ View Interactive HTML Coverage report
 
 When you run the tests, a beautiful interactive HTML coverage report is automatically created in the `htmlcov/` directory.
 
@@ -280,7 +319,7 @@ To visually inspect which lines are covered (in green) and which are missed (in 
 
 ### 3️⃣ Automated Continuous Integration (CI)
 
-A GitHub Actions workflow is fully set up in [.github/workflows/tests.yml](file:///d:/GITHUB%20LOCAL/Agri-Vision/.github/workflows/tests.yml). It will automatically run your entire unit test suite and verify code quality/coverage metrics on every single `push` or `pull_request` to the `main` branch.
+A GitHub Actions workflow is fully set up. It will automatically run your entire unit test suite and verify code quality/coverage metrics on every single `push` or `pull_request` to the `main` branch.
 
 ---
 

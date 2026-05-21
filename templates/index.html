@@ -172,20 +172,28 @@
                             AI-DRIVEN COTTON INTEGRATION
                         </span>
                     </div>
-                    <h1>
-                        AI-Powered 
-                        <span>Cotton Crop Intelligence</span>
+                
+                    <h1 class="typewriter">
+                        <span class="line1">AI-Powered</span>
+                        <span class="line2">Cotton Crop Intelligence</span>
                     </h1>
-                    <p>Analyze crop maturity, detect plant health issues, and optimize harvest timing using smart real-time deep learning analytics.</p>
+                
+                    <p>
+                        Analyze crop maturity, detect plant health issues, and optimize
+                        harvest timing using smart real-time deep learning analytics.
+                    </p>
+                
                     <div class="hero-cta">
                         <a href="/analyze" class="btn btn-primary">
                             <i class="fas fa-camera"></i> Analyze Image
                         </a>
+                       
                         <a href="/demo" class="btn btn-secondary">
                             <i class="fas fa-play-circle"></i> View Demo
                         </a>
                     </div>
                 </div>
+            </div>
                 <div class="hero-image">
                     <div class="scanner-container">
                         <!-- High Tech Corner Brackets -->
@@ -207,7 +215,7 @@
 
                         <!-- Interactive 3D WebGL Crop Scanner Container -->
                         <div class="image-wrapper canvas-3d-wrapper">
-                            <div id="canvas-3d-container" style="position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4;"></div>
+                            <div id="canvas-3d-container" style="position: absolute; inset: 0; width: 100%; height: 80%; z-index: 4;"></div>
                             <div class="image-overlay" style="z-index: 5; pointer-events: none;"></div>
                         </div>
                     </div>
@@ -273,7 +281,24 @@
         </section>
         {% endblock %}
     </main>
+    <!-- =========================================================
+        Agri-Vision Footer Section
 
+        The footer provides quick-access navigation,
+        external platform references, social links,
+        branding information, and additional navigation
+        support for users browsing the platform.
+
+        Recent Improvements:
+        - Removed inactive Twitter/X social icon
+        - Improved footer cleanliness and consistency
+        - Reduced unnecessary external navigation clutter
+        - Enhanced footer maintainability
+        - Improved accessibility and usability
+
+        The footer maintains responsiveness and visual
+        consistency with the futuristic Agri-Vision UI.
+    ========================================================= -->
     <!-- Footer -->
     <footer class="footer no-print reveal reveal-fade-in">
         <div class="footer-container">
@@ -281,6 +306,18 @@
                 <h2 class="footer-title"><i class="fas fa-leaf"></i> Agri-Vision</h2>
                 <p class="footer-subtitle">Empowering cotton farmers with AI-driven insights.</p>
             </div>
+            <!-- =========================================================
+                Footer Navigation Links
+
+                Contains compact navigation shortcuts for
+                important platform pages including tutorials,
+                field comparison, support resources, and
+                AI-powered analysis features.
+
+                Navigation improvements help users access
+                important sections more efficiently while
+                improving overall platform usability.
+            ========================================================= -->
             <div class="footer-links-compact">
                 <a href="/">Home</a>
                 <a href="/analyze">Analyze</a>
@@ -288,22 +325,62 @@
                 <a href="/dashboard">Dashboard</a>
                 <a href="/demo">Demo</a>
                 <a href="/tutorials">Tutorials</a>
-                <a href="#">Support</a>
+                <a href="/support">Support</a>
             </div>
         </div>
+        <!-- =========================================================
+            Footer Bottom Information Section
+
+            Displays copyright information,
+            branding details, social media references,
+            and additional platform identity elements.
+
+            This section improves professional appearance
+            and strengthens overall UI completeness.
+        ========================================================= -->
         <div class="footer-bottom">
             <p>&copy; <span id="year"></span> Agri-Vision. All rights reserved.</p>
             <p>
                 Smart Cotton Crop Analysis System
             </p>
+
+            <!-- =========================================================
+                Footer Social Media Links Section
+
+                This section contains external social media
+                platform links associated with the Agri-Vision
+                project and contributor profiles.
+
+                Improvements Made:
+                - Removed inactive Twitter/X social icon
+                - Reduced unnecessary footer clutter
+                - Improved footer visual consistency
+                - Kept only actively maintained platforms
+                - Enhanced navigation cleanliness
+
+                The footer now provides a cleaner and more
+                professional appearance while avoiding
+                non-functional or unused external links.
+            ========================================================= -->
+
+
             <div class="footer-social">
-                <a href="#"><i class="fab fa-twitter"></i></a>
                 <a href="https://www.linkedin.com/in/neerugangarh/" target="_blank"><i class="fab fa-linkedin"></i></a>
                 <a href="https://github.com/neeru24/Agri-Vision" target="_blank"><i class="fab fa-github"></i></a>
             </div>
         </div>
     </footer>
+    <!-- =========================================================
+        Frontend Interactive Utility Scripts
 
+        Handles:
+        - Theme toggle interactions
+        - Dynamic UI behavior
+        - Frontend accessibility support
+        - Interactive visual enhancements
+
+        Organized separately for cleaner maintainability.
+    ========================================================= -->
     <script>
         document.getElementById("year").textContent = new Date().getFullYear();
 
@@ -813,77 +890,70 @@
             setTimeout(handleResize, 200);
         })();
     </script>
-
-    <!-- Chatbot Widget -->
-    <div id="chatbot-widget" class="chatbot-widget no-print">
-        <div class="chatbot-header" onclick="toggleChat()">
-            <div><i class="fas fa-robot"></i> Agri-Vision Assistant</div>
-            <i class="fas fa-chevron-up" id="chatbot-toggle-icon"></i>
-        </div>
-        <div class="chatbot-body" id="chatbot-body" style="display: none;">
-            <div class="chat-messages" id="chat-messages">
-                <div class="chat-message ai-message">
-                    Hello! I'm your AI assistant. How can I help you with your farm today?
-                </div>
-            </div>
-            <div class="chat-input-container">
-                <input type="text" id="chat-input" placeholder="Type your question..." onkeypress="handleChatKeyPress(event)">
-                <button onclick="sendChatMessage()" class="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        function toggleChat() {
-            const body = document.getElementById('chatbot-body');
-            const icon = document.getElementById('chatbot-toggle-icon');
-            if (body.style.display === 'none') {
-                body.style.display = 'flex';
-                icon.classList.remove('fa-chevron-up');
-                icon.classList.add('fa-chevron-down');
-            } else {
-                body.style.display = 'none';
-                icon.classList.remove('fa-chevron-down');
-                icon.classList.add('fa-chevron-up');
-            }
-        }
-
-        function handleChatKeyPress(e) {
-            if (e.key === 'Enter') {
-                sendChatMessage();
-            }
-        }
-
-        async function sendChatMessage() {
-            const input = document.getElementById('chat-input');
-            const message = input.value.trim();
-            if (!message) return;
-
-            // Add user message to UI
-            const messages = document.getElementById('chat-messages');
-            messages.innerHTML += `<div class="chat-message user-message">${message}</div>`;
-            input.value = '';
-            messages.scrollTop = messages.scrollHeight;
-
-            // Call API
-            try {
-                const response = await fetch('/api/chat', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message })
+        document.addEventListener("DOMContentLoaded", () => {
+        
+            const container = document.querySelector(".trail-container");
+        
+            const dots = [];
+            const totalDots = 15;
+        
+            let mouseX = 0;
+            let mouseY = 0;
+        
+            // Create dots
+            for (let i = 0; i < totalDots; i++) {
+            
+                const dot = document.createElement("div");
+                dot.classList.add("trail-dot");
+            
+                container.appendChild(dot);
+            
+                dots.push({
+                    el: dot,
+                    x: 0,
+                    y: 0
                 });
-                const data = await response.json();
-                
-                // Add AI message
-                setTimeout(() => {
-                    messages.innerHTML += `<div class="chat-message ai-message">${data.reply}</div>`;
-                    messages.scrollTop = messages.scrollHeight;
-                }, 400); // Small delay for realistic feel
-            } catch (err) {
-                messages.innerHTML += `<div class="chat-message ai-message" style="color:#ff4e50;">Sorry, I couldn't connect right now.</div>`;
-                messages.scrollTop = messages.scrollHeight;
             }
-        }
-    </script>
+        
+            // Mouse movement
+            document.addEventListener("mousemove", (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+        
+            // Animate
+            function animate() {
+            
+                let x = mouseX;
+                let y = mouseY;
+            
+                dots.forEach((dot, index) => {
+                
+                    dot.x += (x - dot.x) * 0.35;
+                    dot.y += (y - dot.y) * 0.35;
+                
+                    dot.el.style.left = dot.x + "px";
+                    dot.el.style.top = dot.y + "px";
+                
+                    // Smaller trailing dots
+                    const scale = (totalDots - index) / totalDots;
+                
+                    dot.el.style.transform =
+                        `translate(-50%, -50%) scale(${scale})`;
+                
+                    dot.el.style.opacity = scale;
+                
+                    x = dot.x;
+                    y = dot.y;
+                });
+            
+                requestAnimationFrame(animate);
+            }
+        
+            animate();
+        });
+        </script>
+        <div class="trail-container"></div>
 </body>
 </html>
