@@ -75,6 +75,7 @@ MAX_INFERENCE_DIMENSION = 1024
 DISPLAY_IMAGE_MAX_DIMENSION = 1200
 DISPLAY_JPEG_QUALITY = 80
 
+
 disease_classes = [
     "Aphids",
     "Army worm",
@@ -151,7 +152,12 @@ def generate_mock_heatmap(image_rgb: np.ndarray) -> np.ndarray:
     return heatmap
 
 
-def apply_heatmap_on_image(image_rgb: np.ndarray, heatmap: np.ndarray, alpha: float = 0.6, beta: float = 0.4) -> np.ndarray:
+def apply_heatmap_on_image(
+    image_rgb: np.ndarray,
+    heatmap: np.ndarray,
+    alpha: float = 0.6,
+    beta: float = 0.4,
+) -> np.ndarray:
     h, w, _ = image_rgb.shape
     heatmap_resized = cv2.resize(heatmap, (w, h))
     heatmap_255 = np.uint8(255 * heatmap_resized)
@@ -161,10 +167,7 @@ def apply_heatmap_on_image(image_rgb: np.ndarray, heatmap: np.ndarray, alpha: fl
 
 
 class GradCAM:
-    """
-    Grad-CAM helper with explicit hook handle cleanup.
-    The hooks are removed after each use to avoid leaking references across reloads.
-    """
+    """Grad-CAM helper with explicit hook handle cleanup."""
 
     def __init__(self, model: torch.nn.Module, target_layer: torch.nn.Module):
         self.model = model
@@ -196,7 +199,12 @@ class GradCAM:
         if grad_output and grad_output[0] is not None:
             self.gradients = grad_output[0].detach()
 
-    def __call__(self, input_tensor: torch.Tensor, target_class_idx: Optional[int], original_image_rgb: np.ndarray) -> Optional[np.ndarray]:
+    def __call__(
+        self,
+        input_tensor: torch.Tensor,
+        target_class_idx: Optional[int],
+        original_image_rgb: np.ndarray,
+    ) -> Optional[np.ndarray]:
         if self.model is None:
             logger.warning("Grad-CAM: model is not loaded.")
             return None
@@ -250,10 +258,17 @@ def load_models() -> Tuple[Optional[torch.nn.Module], Optional[YOLO]]:
 
     if resnet_model is None:
         try:
-            resnet_model = torch.load(
-                "models/cotton_crop_disease_classification/full_resnet50_model.pth",
-                map_location=torch.device("cpu"),
-            )
+            try:
+                resnet_model = torch.load(
+                    "models/cotton_crop_disease_classification/full_resnet50_model.pth",
+                    map_location=torch.device("cpu"),
+                )
+            except TypeError:
+                resnet_model = torch.load(
+                    "models/cotton_crop_disease_classification/full_resnet50_model.pth",
+                    map_location=torch.device("cpu"),
+                    weights_only=False,
+                )
             resnet_model.eval()
             logger.info("ResNet50 model loaded successfully")
         except Exception as exc:
@@ -363,7 +378,11 @@ def infer_growth_stage(image: np.ndarray) -> Dict[str, Any]:
     return result
 
 
-def generate_recommendations(disease_result: Dict[str, Any], growth_result: Dict[str, Any], weather: Optional[Dict[str, Any]] = None) -> list[str]:
+def generate_recommendations(
+    disease_result: Dict[str, Any],
+    growth_result: Dict[str, Any],
+    weather: Optional[Dict[str, Any]] = None,
+) -> list[str]:
     recs: list[str] = []
     dclass = disease_result["predicted_class"]
 
@@ -408,16 +427,13 @@ def generate_recommendations(disease_result: Dict[str, Any], growth_result: Dict
     elif disease_result["health_score"] < 70:
         recs.append("Increase frequency of crop monitoring based on moderate health.")
 
-    gmain = growth_result.get("main_class")
+    gmain = growth_result.get("main_class", None)
     grow_map = {
         "Cotton Blossom": [
             "Maintain regular watering during blossom phase.",
             "Scout for early flower pests.",
         ],
-        "Cotton Bud": [
-            "Ensure adequate phosphorus supply.",
-            "Monitor for budworm.",
-        ],
+        "Cotton Bud": ["Ensure adequate phosphorus supply.", "Monitor for budworm."],
         "Early Boll": [
             "Start borer management as boll phase begins.",
             "Avoid excess nitrogen at this stage.",
@@ -582,7 +598,9 @@ def build_comparison_result(old_results: Dict[str, Any], new_results: Dict[str, 
     old_disease = old_results.get("disease")
     new_disease = new_results.get("disease")
     if old_disease is None or new_disease is None:
-        raise ValueError("Unable to compare the provided images because one or both images did not contain a valid cotton crop analysis.")
+        raise ValueError(
+            "Unable to compare the provided images because one or both images did not contain a valid cotton crop analysis."
+        )
 
     old_score = float(old_disease.get("health_score", 0.0))
     new_score = float(new_disease.get("health_score", 0.0))
@@ -1206,7 +1224,6 @@ def analyze_result():
         logger.error("analyze_result error: %s", exc)
         flash(f"Failed to render results: {str(exc)}", "error")
         return redirect(url_for("analyze"))
-
 
 
 if __name__ == "__main__":
