@@ -951,7 +951,6 @@ def support():
 
 
 @app.route("/stories")
- main
 def stories():
     return render_template("stories.html")
 
