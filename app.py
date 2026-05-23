@@ -473,6 +473,12 @@ def generate_recommendations(
         ],
     }
     recs.extend(instr_map.get(dclass, ["Practice general crop hygiene."]))
+    
+    if disease_result["health_score"] < 50:
+        recs.append("Consult an agricultural expert urgently for low health score.")
+        recs.append("Consult an agricultural expert if symptoms persist.")
+    elif disease_result["health_score"] < 70:
+        recs.append("Increase frequency of crop monitoring based on moderate health.")
 
     if disease_result.get("is_uncertain"):
         recs.append(
@@ -480,7 +486,9 @@ def generate_recommendations(
         )
 
     elif disease_result.get("is_ambiguous"):
-        alt = disease_result.get("alternative_prediction", {}).get("class", "another condition")
+        alt = disease_result.get("alternative_prediction", {}).get(
+            "class", "another condition"
+        )
 
         recs.append(
             f"The prediction may overlap with {alt}. Monitor the crop closely before applying treatment."
@@ -593,7 +601,7 @@ def read_uploaded_image(file_storage) -> Tuple[str, np.ndarray, np.ndarray]:
 
 
 def analyze_image(image: np.ndarray) -> Dict[str, Any]:
-    ensure_models_loaded()
+   
 
     try:
         try:
