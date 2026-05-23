@@ -439,7 +439,7 @@ def generate_recommendations(
     weather: Optional[Dict[str, Any]] = None,
 ) -> list[str]:
     recs: list[str] = []
-    dclass = disease_result["predicted_class"]
+    dclass = disease_result.get("predicted_class", "Healthy")
 
     instr_map = {
         "Aphids": [
@@ -477,9 +477,11 @@ def generate_recommendations(
     }
     recs.extend(instr_map.get(dclass, ["Practice general crop hygiene."]))
 
-    if disease_result["health_score"] < 50:
-        recs.append("Consult an agricultural expert urgently for low health score.")
-    elif disease_result["health_score"] < 70:
+    health_score = float(disease_result.get("health_score", 100.0))
+
+    if health_score < 50.0:
+        recs.append("Consult an agricultural expert")
+    elif health_score < 70.0:
         recs.append("Increase frequency of crop monitoring based on moderate health.")
 
     gmain = growth_result.get("main_class", None)
@@ -549,8 +551,8 @@ def enrich_results_with_weather(
 
 def generate_farmer_insights(disease_result: Dict[str, Any], growth_result: Dict[str, Any]) -> list[str]:
     insights = []
-    dclass = disease_result["predicted_class"]
-    hscore = disease_result["health_score"]
+    dclass = disease_result.get("predicted_class", "Healthy")
+    hscore = float(disease_result.get("health_score", 100.0))
     gmain = growth_result.get("main_class", "Unknown")
 
     if dclass != "Healthy":
@@ -576,7 +578,7 @@ def generate_farmer_insights(disease_result: Dict[str, Any], growth_result: Dict
 
 def generate_advanced_recommendations(disease_result: Dict[str, Any], growth_result: Dict[str, Any]) -> Dict[str, str]:
     gmain = growth_result.get("main_class", "Unknown")
-    dclass = disease_result["predicted_class"]
+    dclass = disease_result.get("predicted_class", "Healthy")
 
     adv_recs = {
         "irrigation_timing": "Maintain standard schedule (every 7-10 days depending on soil moisture).",
