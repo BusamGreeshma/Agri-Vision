@@ -6,6 +6,7 @@ flask-cors>=6.0.0
 
 # Updated TensorFlow
 #tensorflow>=2.19.0
+
 matplotlib>=3.10.0
 scikit-learn>=1.7.0
 python-dotenv>=1.1.0
@@ -25,6 +26,7 @@ pytest-cov>=6.0.0
 
 # API docs
 flasgger>=0.9.7
+
 # Async tasks
 celery>=5.4.0
 redis>=6.0.0

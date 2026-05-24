@@ -94,6 +94,57 @@ growth_stage_classes = [
     "Matured Cotton Boll",
     "Split Cotton Boll",
 ]
+
+disease_info_map = {
+    "Aphids": {
+        "healthy_image": "static/images/healthy_leaf.jpg",
+        "description": "Aphids are small sap-sucking insects that weaken cotton plants by feeding on tender leaves and shoots.",
+        "symptoms": "Curled leaves, sticky honeydew, yellowing, and clusters of tiny insects on the underside of leaves.",
+        "treatment": "Remove heavily infested leaves, encourage natural predators, and use neem oil or recommended insecticide if infestation increases.",
+    },
+    "Army worm": {
+        "healthy_image": "static/images/healthy_leaf.jpg",
+        "description": "Army worms are leaf-feeding caterpillars that can quickly damage cotton foliage when populations build up.",
+        "symptoms": "Chewed leaf edges, holes in leaves, skeletonized foliage, and visible larvae on plants.",
+        "treatment": "Scout fields regularly, remove larvae where possible, and apply recommended biological or chemical control at early stages.",
+    },
+    "Bacterial blight": {
+        "healthy_image": "static/images/healthy_leaf.jpg",
+        "description": "Bacterial blight is a cotton disease that spreads through infected seed, crop residue, rain splash, and wind-driven moisture.",
+        "symptoms": "Angular water-soaked leaf spots, dark lesions, yellowing, and drying of affected leaf tissue.",
+        "treatment": "Avoid overhead irrigation, remove infected debris, use disease-free seed, and follow local copper-based spray recommendations if needed.",
+    },
+    "Cotton Boll Rot": {
+        "healthy_image": "static/images/healthy_leaf.jpg",
+        "description": "Cotton boll rot affects developing bolls, especially under humid conditions or poor field drainage.",
+        "symptoms": "Soft or discolored bolls, fungal growth, rotting tissue, and premature boll drop.",
+        "treatment": "Improve drainage and airflow, remove rotten bolls, avoid excess irrigation, and manage insects that create boll wounds.",
+    },
+    "Green Cotton Boll": {
+        "healthy_image": "static/images/healthy_leaf.jpg",
+        "description": "Green cotton boll indicates developing boll growth that should be monitored for nutrition, pests, and disease pressure.",
+        "symptoms": "Green immature bolls with no clear disease symptoms unless stress, pest injury, or spotting appears.",
+        "treatment": "Maintain balanced irrigation and nutrition, scout for pests, and continue regular field monitoring.",
+    },
+    "Healthy": {
+        "healthy_image": "static/images/healthy_leaf.jpg",
+        "description": "The leaf appears healthy with no major visible disease symptoms detected.",
+        "symptoms": "Uniform green color, normal leaf shape, and no significant spots, mildew, curling, or pest damage.",
+        "treatment": "Continue routine monitoring, balanced fertilization, proper irrigation, and preventive crop hygiene.",
+    },
+    "Powdery mildew": {
+        "healthy_image": "static/images/healthy_leaf.jpg",
+        "description": "Powdery mildew is a fungal disease that appears as white powdery growth on cotton leaves.",
+        "symptoms": "White or gray powdery patches, yellowing leaves, reduced vigor, and premature leaf drying.",
+        "treatment": "Improve airflow, remove infected debris, reduce leaf wetness, and apply recommended fungicide when needed.",
+    },
+    "Target Spot": {
+        "healthy_image": "static/images/healthy_leaf.jpg",
+        "description": "Target spot is a fungal leaf disease that produces circular lesions and can reduce cotton leaf area.",
+        "symptoms": "Brown circular spots with ring-like patterns, yellow halos, leaf blight, and premature defoliation.",
+        "treatment": "Reduce leaf wetness, improve spacing and airflow, remove infected residue, and use suitable fungicide if disease spreads.",
+    },
+}
 UNCERTAINTY_THRESHOLD = 0.45
 AMBIGUITY_MARGIN = 0.08
 
@@ -473,6 +524,12 @@ def generate_recommendations(
         ],
     }
     recs.extend(instr_map.get(dclass, ["Practice general crop hygiene."]))
+    
+    if disease_result["health_score"] < 50:
+        recs.append("Consult an agricultural expert urgently for low health score.")
+        recs.append("Consult an agricultural expert if symptoms persist.")
+    elif disease_result["health_score"] < 70:
+        recs.append("Increase frequency of crop monitoring based on moderate health.")
 
     if disease_result.get("is_uncertain"):
         recs.append(
@@ -480,7 +537,9 @@ def generate_recommendations(
         )
 
     elif disease_result.get("is_ambiguous"):
-        alt = disease_result.get("alternative_prediction", {}).get("class", "another condition")
+        alt = disease_result.get("alternative_prediction", {}).get(
+            "class", "another condition"
+        )
 
         recs.append(
             f"The prediction may overlap with {alt}. Monitor the crop closely before applying treatment."
@@ -593,61 +652,80 @@ def read_uploaded_image(file_storage) -> Tuple[str, np.ndarray, np.ndarray]:
 
 
 def analyze_image(image: np.ndarray) -> Dict[str, Any]:
-    ensure_models_loaded()
+   
 
-    growth = infer_growth_stage(image)
-    disease = infer_disease(image)
-
-    grad_cam_image_b64 = None
-    if resnet_model is not None and disease.get("predicted_class_idx") is not None:
+    try:
         try:
-            input_tensor = preprocess_image_for_resnet(image)
-            with GradCAM(resnet_model, resnet_model.layer4[-1]) as grad_cam:
-                grad_cam_overlay = grad_cam(input_tensor, disease["predicted_class_idx"], image)
-            if grad_cam_overlay is not None:
-                grad_cam_image_b64 = encode_image_for_display(grad_cam_overlay)
+            growth = infer_growth_stage(image)
         except Exception as exc:
-            logger.error("Error generating Grad-CAM: %s", exc)
+            logger.error("Error during growth stage inference: %s", exc)
+            growth = {
+                "main_class": None,
+                "main_class_idx": None,
+                "confidence": 0.0,
+                "boxes": [],
+                "raw": [],
+            }
 
-    if grad_cam_image_b64 is None:
-        try:
-            mock_overlay = apply_heatmap_on_image(image, generate_mock_heatmap(image))
-            grad_cam_image_b64 = encode_image_for_display(mock_overlay)
-        except Exception as exc:
-            logger.error("Error generating fallback heatmap: %s", exc)
+        disease = infer_disease(image)
+        if not isinstance(disease, dict) or "predicted_class" not in disease or "health_score" not in disease:
+            raise ValueError("Invalid disease model prediction output.")
 
-    disease["heatmap_b64"] = grad_cam_image_b64
+        grad_cam_image_b64 = None
+        if resnet_model is not None and disease.get("predicted_class_idx") is not None:
+            try:
+                input_tensor = preprocess_image_for_resnet(image)
+                with GradCAM(resnet_model, resnet_model.layer4[-1]) as grad_cam:
+                    grad_cam_overlay = grad_cam(input_tensor, disease["predicted_class_idx"], image)
+                if grad_cam_overlay is not None:
+                    grad_cam_image_b64 = encode_image_for_display(grad_cam_overlay)
+            except Exception as exc:
+                logger.error("Error generating Grad-CAM: %s", exc)
 
-    recs = generate_recommendations(disease, growth)
-    severity = calculate_disease_severity(disease["health_score"])
-    y_pred = predict_yield(disease["health_score"], growth.get("main_class", "Unknown"))
-    adv_recs = generate_advanced_recommendations(disease, growth)
-    insights = generate_farmer_insights(disease, growth)
+        if grad_cam_image_b64 is None:
+            try:
+                mock_overlay = apply_heatmap_on_image(image, generate_mock_heatmap(image))
+                grad_cam_image_b64 = encode_image_for_display(mock_overlay)
+            except Exception as exc:
+                logger.error("Error generating fallback heatmap: %s", exc)
 
-    result = {
-        "disease": disease,
-        "growth": growth,
-        "recommendations": recs,
-        "grad_cam_image_b64": grad_cam_image_b64,
-        "disease_severity": severity,
-        "yield_prediction": y_pred,
-        "advanced_recommendations": adv_recs,
-        "farmer_insights": insights,
-    }
+        disease["heatmap_b64"] = grad_cam_image_b64
 
-    if growth["main_class"] is None:
-        fallback_reason = (
-            "Growth stage model unavailable in this deployment."
-            if yolo_model is None
-            else "Cotton growth stage could not be detected from the uploaded image."
-        )
-        result["warnings"] = [
-            fallback_reason,
-            "Disease analysis is still provided, but comparison may be less reliable without a confirmed cotton crop detection.",
-            "Grad-CAM explainability may also be affected if the primary crop is not detected.",
-        ]
+        recs = generate_recommendations(disease, growth)
+        severity = calculate_disease_severity(disease["health_score"])
+        y_pred = predict_yield(disease["health_score"], growth.get("main_class", "Unknown"))
+        adv_recs = generate_advanced_recommendations(disease, growth)
+        insights = generate_farmer_insights(disease, growth)
 
-    return result
+        result = {
+            "disease": disease,
+            "growth": growth,
+            "recommendations": recs,
+            "grad_cam_image_b64": grad_cam_image_b64,
+            "disease_severity": severity,
+            "yield_prediction": y_pred,
+            "advanced_recommendations": adv_recs,
+            "farmer_insights": insights,
+        }
+
+        if growth.get("main_class") is None:
+            fallback_reason = (
+                "Growth stage model unavailable in this deployment."
+                if yolo_model is None
+                else "Cotton growth stage could not be detected from the uploaded image."
+            )
+            result["warnings"] = [
+                fallback_reason,
+                "Disease analysis is still provided, but comparison may be less reliable without a confirmed cotton crop detection.",
+                "Grad-CAM explainability may also be affected if the primary crop is not detected.",
+            ]
+
+        return result
+    except Exception as exc:
+        logger.error("Unexpected error in image analysis: %s", exc)
+        return {
+            "error": "The AI model encountered an unexpected error while analyzing the image. Please verify the image file format and content and try again."
+        }
 
 
 def build_comparison_result(old_results: Dict[str, Any], new_results: Dict[str, Any]) -> Dict[str, Any]:
@@ -759,6 +837,41 @@ def stories():
     return render_template("stories.html")
 
 
+@app.route("/dashboard")
+def dashboard():
+    farms = [
+        {
+            "name": "GreenGrid Hub — Gujarat",
+            "health": 82,
+            "stage": "Matured Boll",
+            "disease_risk": "Low",
+            "yield_est": 740,
+        },
+        {
+            "name": "North Field — Punjab",
+            "health": 61,
+            "stage": "Early Boll",
+            "disease_risk": "Medium",
+            "yield_est": 520,
+        },
+        {
+            "name": "West Field — Maharashtra",
+            "health": 45,
+            "stage": "Cotton Bud",
+            "disease_risk": "High",
+            "yield_est": 310,
+        },
+        {
+            "name": "East Field — Rajasthan",
+            "health": 91,
+            "stage": "Split Cotton Boll",
+            "disease_risk": "Low",
+            "yield_est": 860,
+        },
+    ]
+    return render_template("dashboard.html", farms=farms)
+
+
 @app.route("/health")
 def health():
     ensure_models_loaded()
@@ -770,7 +883,9 @@ def health():
             "service": "Agri-Vision Cotton Analysis API",
         }
     )
-
+@app.route('/dashboard')
+def dashboard():
+    return render_template("dashboard.html")
 
 @app.route("/analyze", methods=["GET", "POST"])
 def analyze():
@@ -814,6 +929,9 @@ def analyze():
             if results.get("error"):
                 raise ValueError(results["error"])
 
+            predicted_class = results.get("disease", {}).get("predicted_class", "")
+            disease_info = disease_info_map.get(predicted_class, {})
+
             return render_template(
                 "results.html",
                 results=results,
@@ -824,6 +942,7 @@ def analyze():
                 timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 weather=weather,
                 grad_cam_image_b64=results.get("grad_cam_image_b64"),
+                disease_info=disease_info,
             )
         except Exception as exc:
             logger.error("Analysis error: %s", exc)
@@ -910,81 +1029,85 @@ def comparison():
 
 @app.route("/demo")
 def demo():
-    example_disease_probs = [0.08, 0.02, 0.01, 0.10, 0.04, 0.65, 0.05, 0.05]
-    demo_disease = {
-        "predicted_class": "Healthy",
-        "predicted_class_idx": 5,
-        "confidence": example_disease_probs[5],
-        "model_confidence": round(example_disease_probs[5] * 100, 2),
-        "detected_issue": "Healthy",
-        "all_confidences": {
-            disease_classes[i]: example_disease_probs[i]
-            for i in range(len(disease_classes))
-        },
-        "health_score": 65.0,
-        "raw": [example_disease_probs],
+    try:
+        example_disease_probs = [0.08, 0.02, 0.01, 0.10, 0.04, 0.65, 0.05, 0.05]
+        demo_disease = {
+            "predicted_class": "Healthy",
+            "predicted_class_idx": 5,
+            "confidence": example_disease_probs[5],
+            "model_confidence": round(example_disease_probs[5] * 100, 2),
+            "detected_issue": "Healthy",
+            "all_confidences": {
+                disease_classes[i]: example_disease_probs[i]
+                for i in range(len(disease_classes))
+            },
+            "health_score": 65.0,
+            "raw": [example_disease_probs],
 
-        # add missing UI-safe fields
-        "is_uncertain": False,
-        "is_ambiguous": False,
-        "interpretation_message": "Healthy crop detected with moderate confidence."
-    }
-    demo_growth_boxes = [
-        {"class_id": 3, "class_name": "Matured Cotton Boll", "confidence": 0.91, "bbox": [120, 80, 210, 155]},
-        {"class_id": 4, "class_name": "Split Cotton Boll", "confidence": 0.70, "bbox": [300, 120, 390, 210]},
-    ]
-    demo_growth = {
-        "main_class": "Matured Cotton Boll",
-        "main_class_idx": 3,
-        "confidence": 0.91,
-        "boxes": demo_growth_boxes,
-        "raw": demo_growth_boxes,
-    }
+            # add missing UI-safe fields
+            "is_uncertain": False,
+            "is_ambiguous": False,
+            "interpretation_message": "Healthy crop detected with moderate confidence."
+        }
+        demo_growth_boxes = [
+            {"class_id": 3, "class_name": "Matured Cotton Boll", "confidence": 0.91, "bbox": [120, 80, 210, 155]},
+            {"class_id": 4, "class_name": "Split Cotton Boll", "confidence": 0.70, "bbox": [300, 120, 390, 210]},
+        ]
+        demo_growth = {
+            "main_class": "Matured Cotton Boll",
+            "main_class_idx": 3,
+            "confidence": 0.91,
+            "boxes": demo_growth_boxes,
+            "raw": demo_growth_boxes,
+        }
 
-    synthetic_bgr = np.zeros((384, 512, 3), dtype=np.uint8)
-    synthetic_bgr[:, :] = [30, 40, 45]
-    cv2.circle(synthetic_bgr, (200, 220), 120, (34, 139, 34), -1)
-    cv2.circle(synthetic_bgr, (320, 260), 100, (46, 139, 87), -1)
-    cv2.circle(synthetic_bgr, (120, 280), 90, (34, 120, 34), -1)
-    cv2.line(synthetic_bgr, (256, 384), (256, 200), (42, 75, 124), 12)
-    cv2.line(synthetic_bgr, (256, 260), (140, 180), (42, 75, 124), 8)
-    cv2.line(synthetic_bgr, (256, 220), (380, 150), (42, 75, 124), 8)
-    cv2.circle(synthetic_bgr, (220, 200), 15, (40, 50, 139), -1)
-    cv2.circle(synthetic_bgr, (215, 195), 5, (20, 30, 80), -1)
-    cv2.circle(synthetic_bgr, (180, 240), 10, (40, 50, 139), -1)
-    cv2.ellipse(synthetic_bgr, (165, 117), (40, 30), 0, 0, 360, (50, 180, 100), -1)
-    cv2.ellipse(synthetic_bgr, (165, 117), (40, 30), 0, 0, 360, (40, 140, 80), 2)
-    cv2.line(synthetic_bgr, (165, 87), (165, 75), (42, 75, 124), 4)
-    cv2.circle(synthetic_bgr, (330, 165), 20, (245, 245, 245), -1)
-    cv2.circle(synthetic_bgr, (360, 165), 20, (245, 245, 245), -1)
-    cv2.circle(synthetic_bgr, (345, 150), 20, (255, 255, 255), -1)
-    cv2.circle(synthetic_bgr, (345, 180), 20, (230, 230, 230), -1)
-    cv2.ellipse(synthetic_bgr, (345, 185), (35, 15), 0, 0, 360, (30, 50, 90), -1)
+        synthetic_bgr = np.zeros((384, 512, 3), dtype=np.uint8)
+        synthetic_bgr[:, :] = [30, 40, 45]
+        cv2.circle(synthetic_bgr, (200, 220), 120, (34, 139, 34), -1)
+        cv2.circle(synthetic_bgr, (320, 260), 100, (46, 139, 87), -1)
+        cv2.circle(synthetic_bgr, (120, 280), 90, (34, 120, 34), -1)
+        cv2.line(synthetic_bgr, (256, 384), (256, 200), (42, 75, 124), 12)
+        cv2.line(synthetic_bgr, (256, 260), (140, 180), (42, 75, 124), 8)
+        cv2.line(synthetic_bgr, (256, 220), (380, 150), (42, 75, 124), 8)
+        cv2.circle(synthetic_bgr, (220, 200), 15, (40, 50, 139), -1)
+        cv2.circle(synthetic_bgr, (215, 195), 5, (20, 30, 80), -1)
+        cv2.circle(synthetic_bgr, (180, 240), 10, (40, 50, 139), -1)
+        cv2.ellipse(synthetic_bgr, (165, 117), (40, 30), 0, 0, 360, (50, 180, 100), -1)
+        cv2.ellipse(synthetic_bgr, (165, 117), (40, 30), 0, 0, 360, (40, 140, 80), 2)
+        cv2.line(synthetic_bgr, (165, 87), (165, 75), (42, 75, 124), 4)
+        cv2.circle(synthetic_bgr, (330, 165), 20, (245, 245, 245), -1)
+        cv2.circle(synthetic_bgr, (360, 165), 20, (245, 245, 245), -1)
+        cv2.circle(synthetic_bgr, (345, 150), 20, (255, 255, 255), -1)
+        cv2.circle(synthetic_bgr, (345, 180), 20, (230, 230, 230), -1)
+        cv2.ellipse(synthetic_bgr, (345, 185), (35, 15), 0, 0, 360, (30, 50, 90), -1)
 
-    synthetic_rgb = cv2.cvtColor(synthetic_bgr, cv2.COLOR_BGR2RGB)
-    mock_overlay = apply_heatmap_on_image(synthetic_rgb, generate_mock_heatmap(synthetic_rgb))
-    image_b64 = encode_image_for_display(synthetic_rgb)
-    grad_cam_image_b64 = encode_image_for_display(mock_overlay)
+        synthetic_rgb = cv2.cvtColor(synthetic_bgr, cv2.COLOR_BGR2RGB)
+        mock_overlay = apply_heatmap_on_image(synthetic_rgb, generate_mock_heatmap(synthetic_rgb))
+        image_b64 = encode_image_for_display(synthetic_rgb)
+        grad_cam_image_b64 = encode_image_for_display(mock_overlay)
 
-    demo_disease["heatmap_b64"] = grad_cam_image_b64
-    example_json = {
-        "disease": demo_disease,
-        "growth": demo_growth,
-        "recommendations": generate_recommendations(demo_disease, demo_growth),
-        "grad_cam_image_b64": grad_cam_image_b64,
-    }
+        demo_disease["heatmap_b64"] = grad_cam_image_b64
+        example_json = {
+            "disease": demo_disease,
+            "growth": demo_growth,
+            "recommendations": generate_recommendations(demo_disease, demo_growth),
+            "grad_cam_image_b64": grad_cam_image_b64,
+        }
 
-    return render_template(
-        "results.html",
-        results=example_json,
-        filename="demo_cotton.jpg",
-        image_b64=image_b64,
-        img_shape={"width": 512, "height": 384},
-        raw_json=json.dumps(example_json, indent=2),
-        timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        grad_cam_image_b64=grad_cam_image_b64,
-    )
-
+        return render_template(
+            "results.html",
+            results=example_json,
+            filename="demo_cotton.jpg",
+            image_b64=image_b64,
+            img_shape={"width": 512, "height": 384},
+            raw_json=json.dumps(example_json, indent=2),
+            timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            grad_cam_image_b64=grad_cam_image_b64,
+            disease_info=disease_info_map.get("Healthy", {}),
+        )
+    except Exception as e:
+        logger.error(f"Demo route failed: {e}")
+        return redirect(url_for("index"))
 
 @app.route("/api/chat_test", methods=["GET"])
 def api_chat_test():
@@ -1310,6 +1433,7 @@ if __name__ == "__main__":
     logger.info("/              - Home page")
     logger.info("/analyze       - Upload and analyze image")
     logger.info("/comparison    - Compare two field images")
+    logger.info("/dashboard     - Multi-farm comparison dashboard")
     logger.info("/demo          - View demo results")
     logger.info("/api/analyze   - API endpoint (POST)")
     logger.info("/health        - Health check")
